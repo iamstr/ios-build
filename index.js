@@ -11,9 +11,11 @@ async function run() {
         // 1. GET SCHEMES
         console.log(chalk.gray('🔍 Searching for schemes...'));
         const listJson = JSON.parse(execSync('xcodebuild -list -json').toString());
-        const schemes = listJson.project?.schemes;
-
-        if (!schemes || !schemes.length) throw new Error("No schemes found in this directory.");
+        
+        if (!listJson.project) throw new Error("No Xcode project found in this directory.");
+        
+        const schemes = listJson.project.schemes;
+        if (!schemes || !schemes.length) throw new Error("No schemes found in the Xcode project.");
 
         // 2. GET SIMULATORS
         const devicesJson = JSON.parse(execSync('xcrun simctl list devices --json').toString());
@@ -54,9 +56,9 @@ async function run() {
         if (!bundleIdMatch) throw new Error("Could not find PRODUCT_BUNDLE_IDENTIFIER in build settings");
         if (!appNameMatch) throw new Error("Could not find WRAPPER_NAME in build settings");
 
-        const buildDir = buildDirMatch[1];
-        const bundleId = bundleIdMatch[1];
-        const appName = appNameMatch[1];
+        const buildDir = buildDirMatch[1].trim();
+        const bundleId = bundleIdMatch[1].trim();
+        const appName = appNameMatch[1].trim();
         const appPath = `${buildDir}/${appName}`;
 
         // 7. INSTALL AND LAUNCH

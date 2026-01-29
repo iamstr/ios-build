@@ -67,4 +67,3 @@ The tool performs the "Xcode Dance" automatically:
 
 - `inquirer` - Interactive command-line prompts
 - `chalk` - Terminal string styling
-- `execa` - Process execution (not used in current implementation but available)
