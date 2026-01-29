@@ -1,0 +1,14 @@
+{
+  "name": "swift-run-cli",
+  "version": "1.0.0",
+  "description": "Auto-build and deploy SwiftUI apps to simulators",
+  "main": "index.js",
+  "bin": {
+    "swift-run": "./index.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "execa": "^5.1.1",
+    "inquirer": "^8.2.4"
+  }
+}
