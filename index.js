@@ -11,9 +11,9 @@ async function run() {
         // 1. GET SCHEMES
         console.log(chalk.gray('🔍 Searching for schemes...'));
         const listJson = JSON.parse(execSync('xcodebuild -list -json').toString());
-        const schemes = listJson.project.schemes;
+        const schemes = listJson.project?.schemes;
 
-        if (!schemes.length) throw new Error("No schemes found in this directory.");
+        if (!schemes || !schemes.length) throw new Error("No schemes found in this directory.");
 
         // 2. GET SIMULATORS
         const devicesJson = JSON.parse(execSync('xcrun simctl list devices --json').toString());
@@ -44,24 +44,36 @@ async function run() {
 
         // 6. EXTRACT BUILD PATH & BUNDLE ID
         console.log(chalk.gray('📂 Locating build artifacts...'));
-        const buildSettings = execSync(`xcodebuild -scheme "${selectedScheme}" -showBuildSettings`).toString();
+        const buildSettings = execSync(`xcodebuild -scheme "${selectedScheme}" -sdk iphonesimulator -showBuildSettings`).toString();
         
-        const buildDir = buildSettings.match(/BUILT_PRODUCTS_DIR = (.+)/)[1];
-        const bundleId = buildSettings.match(/PRODUCT_BUNDLE_IDENTIFIER = (.+)/)[1];
-        const appName = buildSettings.match(/WRAPPER_NAME = (.+)/)[1];
+        const buildDirMatch = buildSettings.match(/BUILT_PRODUCTS_DIR = (.+)/);
+        const bundleIdMatch = buildSettings.match(/PRODUCT_BUNDLE_IDENTIFIER = (.+)/);
+        const appNameMatch = buildSettings.match(/WRAPPER_NAME = (.+)/);
+
+        if (!buildDirMatch) throw new Error("Could not find BUILT_PRODUCTS_DIR in build settings");
+        if (!bundleIdMatch) throw new Error("Could not find PRODUCT_BUNDLE_IDENTIFIER in build settings");
+        if (!appNameMatch) throw new Error("Could not find WRAPPER_NAME in build settings");
+
+        const buildDir = buildDirMatch[1];
+        const bundleId = bundleIdMatch[1];
+        const appName = appNameMatch[1];
         const appPath = `${buildDir}/${appName}`;
 
         // 7. INSTALL AND LAUNCH
         console.log(chalk.green(`\n📦 Installing ${appName} on simulator...`));
-        execSync(`xcrun simctl install booted "${appPath}"`);
+        execSync(`xcrun simctl install ${selectedDevice.udid} "${appPath}"`);
         
         console.log(chalk.green(`🚀 Launching ${bundleId}...`));
-        execSync(`xcrun simctl launch booted ${bundleId}`);
+        execSync(`xcrun simctl launch ${selectedDevice.udid} ${bundleId}`);
 
         console.log(chalk.blue.bold('\n✅ App is running!\n'));
 
     } catch (error) {
         console.error(chalk.red(`\n❌ Error: ${error.message}`));
+        if (error.stderr) {
+            console.error(chalk.red('Details:'), error.stderr.toString());
+        }
+        process.exit(1);
     }
 }
 
